@@ -9,9 +9,11 @@ function(mu,sig,pie,gamma,delta, nsim=1, seed=NULL){
         initial <- sample(m, 1, prob=delta)
     xx <- rep(NA, nsim)
     xx[1] <- initial
-    for (i in 2:nsim)
+	if (nsim>1){
+      for (i in 2:nsim)
         xx[i] <- sample(x=1:m, size=1, prob=gamma[(xx[i-1]),])
-    mcy <- xx
+    }
+	mcy <- xx
     x <- z <- rep(NA, nsim)
     U <- runif(nsim)
     for (i in 1:nsim) {

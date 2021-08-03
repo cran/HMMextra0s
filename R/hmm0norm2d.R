@@ -19,7 +19,7 @@ hmm0norm2d <- function( R, Z, pie, gamma, mu, sig, delta, tol=1e-6, print.level=
     pRS <- matrix( 1, nn, m )
     for (k in 1:m)
     {
-      pRS[,k] <- ( pie[k] * dmvnorm(R, mean = mu[k,], sigma = sig[,,k]) )^Z * (1-pie[k])^(1-Z)
+      pRS[,k] <- ( pie[k] * dmvnorm(R, mean = mu[k,], sigma = sig[,,k]) )*Z + (1-pie[k])*(1-Z)
     }
 #
 ##Scaled forward variable
@@ -90,47 +90,70 @@ hmm0norm2d <- function( R, Z, pie, gamma, mu, sig, delta, tol=1e-6, print.level=
     }
 #
 ##E-step
+    if (fortran!=TRUE) {
 ###Calculate v_t(j)
-    v <- exp(logalpha + logbeta - LL)
+        v <- exp(logalpha + logbeta - LL)
 ###Calculate w_t(i,j) 
-    w <- array( NA, c( nn-1, m, m ) )
-    for (k in 1:m) {
-        logprob <- log( pRS[-1, k] )
-        logPi <- matrix(log(gamma[, k]), byrow = TRUE, nrow = nn - 
-            1, ncol = m)
-        logPbeta <- matrix(logprob + logbeta[-1, k],
-            byrow = FALSE, nrow = nn - 1, ncol = m)
-        w[, , k] <- logPi + logalpha[-nn, ] + logPbeta - LL
+        w <- array( NA, c( nn-1, m, m ) )
+        for (k in 1:m) {
+            logprob <- log( pRS[-1, k] )
+            logPi <- matrix(log(gamma[, k]), byrow = TRUE, nrow = nn - 
+                1, ncol = m)
+            logPbeta <- matrix(logprob + logbeta[-1, k],
+                byrow = FALSE, nrow = nn - 1, ncol = m)
+            w[, , k] <- logPi + logalpha[-nn, ] + logPbeta - LL
+        }
+        w <- exp(w)
+    } else {
+        v <- array(0.0, c( nn, m ))
+        w <- array(0.0, c( nn-1, m, m ) )
+# logalpha can contain -Inf values where phi=0; set NAOK=TRUE as the Fortran code
+# will handle such cases safely
+        estep <- .Fortran("estep", m, nn, logalpha, logbeta, LL,
+                          pRS, gamma, v, w, NAOK=TRUE, PACKAGE="HMMextra0s")
+        v <- estep[[8]]
+        w <- estep[[9]]
     }
-    w <- exp(w)
+
 #
 ##M-step
 ###Estimate pie_{i}, mu_{ij} and sigma_{ij}
-    hatpie <- NULL
+    hatpie <- rep(0, m)
     hatmu <- matrix( 0, m, n )
     hatsig <- array( 0, dim=c(n,n,m) )
-    for (j in 1:m)
-    { hatpie[j] <- ( v[,j] %*% Z ) / sum( v[,j] )
-      hatmu[j,] <- ( v[Z==1,j] %*% R[Z==1,] ) / sum( v[Z==1,j] )
-      for (kk in 1:n){
-       for (jj in 1:n){ 
-        hatsig[kk,jj,j] <- ( sum( v[Z==1,j] * ( R[Z==1,kk] - hatmu[j,kk] )* 
-                    ( R[Z==1,jj] - hatmu[j,jj] ) ) / 
-                    sum( v[Z==1,j] ) ) 
-       }
-      }
+    if (fortran!=TRUE) {
+        for (j in 1:m) {
+            hatpie[j] <- ( v[,j] %*% Z ) / sum( v[,j] )
+            hatmu[j,] <- ( v[Z==1,j] %*% R[Z==1,] ) / sum( v[Z==1,j] )
+            for (kk in 1:n) {
+                for (jj in 1:n) {
+                    hatsig[kk,jj,j] <- ( sum( v[Z==1,j] * ( R[Z==1,kk] - hatmu[j,kk] )*
+                                       ( R[Z==1,jj] - hatmu[j,jj] ) ) /
+                                         sum( v[Z==1,j] ) )
+                }
+            }
+        }
+    } else {
+        mstep2d <- .Fortran("mstep2d", n, m, nn, v, Z, R,
+                            hatpie, hatmu, hatsig,
+                            PACKAGE="HMMextra0s")
+        hatpie <- mstep2d[[7]]
+        hatmu <- mstep2d[[8]]
+        hatsig <- mstep2d[[9]]
     }
+
 ###Estimate gamma_{ij}
 #
-   hatgamma <- matrix( 1, m, m )
-   for (j in 1:m)
-   {
-      for (i in 1:m)
-      {
-         hatgamma[i,j] <- sum( (w[,i,j]) ) / 
-                          ( sum( v[,i] ) - v[nn,i] )
-      }
-   }
+#   hatgamma <- matrix( 1, m, m )
+#   for (j in 1:m)
+#   {
+#      for (i in 1:m)
+#      {
+#         hatgamma[i,j] <- sum( (w[,i,j]) ) / 
+#                          ( sum( v[,i] ) - v[nn,i] )
+#      }
+#   }
+    hatgamma <- colSums( w ) / replicate(m, colSums( v ) - v[nn,])
 #
 ###Estimate delta
     hatdelta <- v[1,]

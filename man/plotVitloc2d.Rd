@@ -61,5 +61,7 @@ plotVitloc2d(Viterbi3, R, Z,HMMEST)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{plot,2-D classification,Viterbi}
+\keyword{plot}
+\keyword{2-D classification}
+\keyword{Viterbi}
 

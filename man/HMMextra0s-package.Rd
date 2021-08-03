@@ -59,7 +59,7 @@ Wang, T., Zhuang, J., Buckby, J., Obara, K. and Tsuruoka, H. (2018) Identifying 
 
 Some of the functions in the package are based on those of the R package ``HiddenMarkov":
 
-Harte, D. (2017) HiddenMarkov: Hidden Markov Models. R package version 1.8-11. Statistics Research Associates, Wellington. URL: \url{http://www.statsresearch.co.nz/dsh/sslib/}
+Harte, D. (2021) HiddenMarkov: Hidden Markov Models. R package version 1.8-13. URL: \url{https://cran.r-project.org/package=HiddenMarkov}
 }
 \keyword{ package }
 

@@ -62,7 +62,9 @@ plotVitpath2d(Viterbi3, R, Z,HMMEST,len.dat=5000,varb=5000,yearstart=2005, yeare
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{plot,classification,Viterbi}
+\keyword{plot}
+\keyword{2-D classification}
+\keyword{Viterbi}
 
 
 

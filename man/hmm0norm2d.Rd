@@ -127,7 +127,8 @@ while(kk<N)
       HMMest <- temp
       LL =HMMest$LL
       eval(parse(text=paste('HMM',kk,'est = HMMest',sep="")))
-      eval(parse(text=paste('save(HMM',kk,'est, file="HMM',kk,'est.image")',sep='')))
+#      eval(parse(text=paste('save(HMM',kk,'est, file="HMM',kk,'est.image")',sep='')))
+## Uncomment the line above if you would like to save the result into a .image file.
     }
    }, error=function(e){})
  print(kk)

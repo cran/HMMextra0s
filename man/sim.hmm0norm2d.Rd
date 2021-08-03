@@ -8,7 +8,7 @@ Simulation of a Bivariate HMM with Extra Zeros
 Simulates the observed process and the associated binary variable of a bivariate HMM with extra zeros.
 }
 \usage{
-sim.hmm0norm2d(mu, sig, pie, gamma, delta, nsim = 1, seed = NULL)
+sim.hmm0norm2d(mu, sig, pie, gamma, delta, nsim = 1, mc.hist = NULL, seed = NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -18,6 +18,7 @@ sim.hmm0norm2d(mu, sig, pie, gamma, delta, nsim = 1, seed = NULL)
   \item{sig}{is a \eqn{2 * 2 * m} array. The matrix \code{sig[,,j]} is the variance-covariance matrix of the bivariate (Gaussian) distribution of the observations in state \eqn{j}.}
   \item{delta}{is a vector of length \eqn{m}, the initial distribution vector of the Markov chain.}
   \item{nsim}{is an integer, the number of observations to simulate.}
+  \item{mc.hist}{is a vector containing the history of the hidden Markov chain. This is mainly used for forecasting. If we fit an HMM to the data, and obtained the Viterbi path for the data, we can let \code{mc.hist} equal to the Viterbi path and then forecast futrue steps by simulation.}
   \item{seed}{is the seed for simulation. Default \code{seed=NULL}.}
 }
 %\details{
@@ -47,6 +48,7 @@ Ting Wang
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 %}
 \examples{
+## Simulating a sequence of data without using any history.
 pie <- c(0.002,0.2,0.4)
 gamma <- matrix(c(0.99,0.007,0.003,
                   0.02,0.97,0.01,
@@ -63,6 +65,16 @@ sig[,,3] <- matrix(c(0.002,0.0018,
                      0.0018,0.003),byrow=TRUE,nrow=2)
 delta <- c(1,0,0)
 y <- sim.hmm0norm2d(mu,sig,pie,gamma,delta, nsim=5000)
+
+
+## Forecast future tremor occurrences and locations when tremor occurs.
+R <- y$x
+Z <- y$z
+HMMEST <- hmm0norm2d(R, Z, pie, gamma, mu, sig, delta)
+Viterbi3 <- Viterbi.hmm0norm2d(R,Z,HMMEST)
+y <- sim.hmm0norm2d(mu,sig,pie,gamma,delta,nsim=2,mc.hist=Viterbi3$y)
+# This only forecasts two steps forward when we use nsim=2. 
+# One can increase nsim to get longer simulated forecasts.
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
